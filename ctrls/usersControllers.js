@@ -1,6 +1,10 @@
 const userModel = require("../db/models/userModel");
 const gravatar = require("gravatar");
 const jwt = require("jsonwebtoken");
+const fs = require("fs").promises;
+const path = require("path");
+
+const avatarDir = path.join(__dirname, "../public", "avatars");
 
 const { SECRET_KEY } = process.env;
 
@@ -84,4 +88,24 @@ const current = async (req, res, next) => {
   }
 };
 
-module.exports = { signup, login, logout, current };
+const changeAvatar = async (req, res, next) => {
+  try {
+    const { path: oldPath, originalname } = req.file;
+    const { _id } = req.user;
+
+    const fileName = `${_id}${originalname}`;
+
+    const newPath = path.join(avatarDir, fileName);
+    await fs.rename(oldPath, newPath);
+
+    const avatarUrl = path.join("avatars", fileName);
+
+    await userModel.findByIdAndUpdate(_id, { avatar: avatarUrl });
+    res.json({ avatar: avatarUrl });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { signup, login, logout, current, changeAvatar };
