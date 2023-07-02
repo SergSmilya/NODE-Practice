@@ -35,4 +35,53 @@ async function signup(req, res, next) {
   }
 }
 
-module.exports = { signup };
+const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      res.status(401).json({ message: "email or password wrong" });
+      return;
+    }
+    const isPasswordTrue = await user.comparePassword(password);
+    if (!isPasswordTrue) {
+      res.status(401).json({ message: "email or password wrong" });
+      return;
+    }
+    const payload = { id: user._id };
+    const token = jwt.sign(payload, SECRET_KEY);
+    await userModel.findByIdAndUpdate(user._id, { token });
+    res.json({ user: { name: user.name, email, avatar: user.avatar }, token });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const logout = async (req, res, next) => {
+  try {
+    const { _id } = req.user;
+    await userModel.findByIdAndUpdate(_id, { token: "" });
+    res.status(204).send();
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const current = async (req, res, next) => {
+  try {
+    const { name, email, avatar } = req.user;
+
+    res.status(200).json({
+      name,
+      email,
+      avatar,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { signup, login, logout, current };

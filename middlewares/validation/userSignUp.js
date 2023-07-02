@@ -6,7 +6,7 @@ const userSchema = Joi.object({
   password: Joi.string().min(7).required(),
 });
 
-const userValidator = (req, res, next) => {
+const userSignUp = (req, res, next) => {
   const { error } = userSchema.validate(req.body);
 
   if (error) {
@@ -16,4 +16,4 @@ const userValidator = (req, res, next) => {
   next();
 };
 
-module.exports = userValidator;
+module.exports = userSignUp;
